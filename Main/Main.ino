@@ -10,11 +10,15 @@ int IndicatorLED2 = 9;    //Pin of LED2
 int IndicatorLED3 = 10;   //Pin of LED3
 int IndicatorLED4 = 11;   //Pin of LED4
 
-//Startup Values
+//Hardware Values (Change Not reccomended)
+int hitReg = false;       // Toggle for hit detection
+bool alive = false;       // Robot is alive
+bool function = false;    // Variable for Running Functions
+
+//Customization Values (You can change)
 int startSteeringPos = 90; //Servo can be set from 0-180 so 90 is the middle
 int lives = 3;             // Number of Lives at the start
-int hitReg = false;          // Cooldown after taking a hit
-bool alive = false;        //Robot is alive
+int ledBrightness = 25;   // Brightness of LEDS
 
 void setup() {
   //Laser Setup
@@ -31,64 +35,76 @@ void setup() {
   pinMode(IndicatorLED4, OUTPUT);
 
   //Init Functions
-  steeringServo.write(startSteeringPos);  //Set steering to forwards
-  digitalWrite(IndicatorLED1, HIGH);      //Enable LED Indicator 1
-  digitalWrite(IndicatorLED2, HIGH);      //Enable LED Indicator 2
-  digitalWrite(IndicatorLED3, HIGH);      //Enable LED Indicator 3
-  digitalWrite(IndicatorLED4, LOW);       //Disables LED Indicator 4
-  digitalWrite(laserEmitter, HIGH);       //Enable Laser Emitter
+  steeringServo.write(startSteeringPos);     //Set steering to forwards
+  function = led(IndicatorLED1, true);       //Enables LED Indicator 1
+  function = led(IndicatorLED2, true);       //Enables LED Indicator 2
+  function = led(IndicatorLED3, true);       //Enables LED Indicator 3
+  function = led(IndicatorLED4, false);      //Disables LED Indicator 4
+  digitalWrite(laserEmitter, HIGH);          //Enable Laser Emitter
 }
 
 void loop() {
   //Hit Detection
   if (digitalRead(laserRecier) == true && hitReg == false) {
-    //Hit Detected
-    lives = lives - 1;//Remove 1 Life
-    alive = livesIndicator(lives);
-    hitReg = true;
-    digitalWrite(IndicatorLED4, HIGH);      //Disables LED Indicator 4
+    //Reciver is being hit
+    lives = lives - 1;                         //Remove 1 Life
+    alive = livesIndicator(lives);             //Change LED's to Reflect Life Count
+    hitReg = true;                             //Turn on the Being Hit Variable
+    function = led(IndicatorLED4, true);       //Disables LED Indicator 4
   }
   else if (digitalRead(laserRecier) == false && hitReg == true) {
-    hitReg = false;
-    digitalWrite(IndicatorLED4, LOW);      //Disables LED Indicator 4
+    //Reciver has stopped being hit
+    hitReg = false;                            //Turn off the being hit variable
+    function = led(IndicatorLED4, false);      //Disables LED Indicator 4
   }
 }
 
 bool livesIndicator(int lives) {
   if (lives == 3) {
     //3 lives 
-    digitalWrite(IndicatorLED1, HIGH);     //Enables LED Indicator 1
-    digitalWrite(IndicatorLED2, HIGH);     //Enables LED Indicator 2
-    digitalWrite(IndicatorLED3, HIGH);     //Enables LED Indicator 3
-    digitalWrite(IndicatorLED4, LOW);      //Disables LED Indicator 4
-    digitalWrite(laserEmitter, HIGH);      //Enables Laser Emitter
+    function = led(IndicatorLED1, true);       //Enables LED Indicator 1
+    function = led(IndicatorLED2, true);       //Enables LED Indicator 2
+    function = led(IndicatorLED3, true);       //Enables LED Indicator 3
+    function = led(IndicatorLED4, false);      //Disables LED Indicator 4
+    digitalWrite(laserEmitter, HIGH);          //Enables Laser Emitter
     return true;
   }
   else if (lives == 2) {
     //2 Lives
-    digitalWrite(IndicatorLED1, HIGH);     //Enables LED Indicator 1
-    digitalWrite(IndicatorLED2, HIGH);     //Enables LED Indicator 2
-    digitalWrite(IndicatorLED3, LOW);      //Disables LED Indicator 3
-    digitalWrite(IndicatorLED4, LOW);      //Disables LED Indicator 4
-    digitalWrite(laserEmitter, HIGH);      //Enables Laser Emitter
+    function = led(IndicatorLED1, true);       //Enables LED Indicator 1
+    function = led(IndicatorLED2, true);       //Enables LED Indicator 2
+    function = led(IndicatorLED3, false);      //Disables LED Indicator 3
+    function = led(IndicatorLED4, false);      //Disables LED Indicator 4
+    digitalWrite(laserEmitter, HIGH);          //Enables Laser Emitter
     return true;
   }
   else if (lives == 1) {
     //1 Life
-    digitalWrite(IndicatorLED1, HIGH);     //Enables LED Indicator 1
-    digitalWrite(IndicatorLED2, LOW);      //Disables LED Indicator 2
-    digitalWrite(IndicatorLED3, LOW);      //Disables LED Indicator 3
-    digitalWrite(IndicatorLED4, LOW);      //Disables LED Indicator 4
-    digitalWrite(laserEmitter, HIGH);      //Enables Laser Emitter
+    function = led(IndicatorLED1, true);       //Enables LED Indicator 1
+    function = led(IndicatorLED2, false);      //Disables LED Indicator 2
+    function = led(IndicatorLED3, false);      //Disables LED Indicator 3
+    function = led(IndicatorLED4, false);      //Disables LED Indicator 4
+    digitalWrite(laserEmitter, HIGH);          //Enables Laser Emitter
     return true;
   }
   else if (lives < 1) {
     //Robot is Dead
-    digitalWrite(IndicatorLED1, LOW);     //Disables LED Indicator 1
-    digitalWrite(IndicatorLED2, LOW);     //Disables LED Indicator 2
-    digitalWrite(IndicatorLED3, LOW);     //Disables LED Indicator 3
-    digitalWrite(IndicatorLED4, HIGH);     //Enables LED Indicator 4
-    digitalWrite(laserEmitter, LOW);      //Disables Laser Emitter
+    function = led(IndicatorLED1, false);     //Disables LED Indicator 1
+    function = led(IndicatorLED2, false);     //Disables LED Indicator 2
+    function = led(IndicatorLED3, false);     //Disables LED Indicator 3
+    function = led(IndicatorLED4, true);      //Enables LED Indicator 4
+    digitalWrite(laserEmitter, LOW);          //Disables Laser Emitter
+    return false;
+  }
+}
+
+bool led(int pin, bool enabledDisabled) {
+  if (enabledDisabled == true) {
+    analogWrite(pin, ledBrightness);
+    return true;
+  }
+  else {
+    digitalWrite(pin, LOW);
     return false;
   }
 }
