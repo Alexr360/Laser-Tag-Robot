@@ -1,14 +1,14 @@
 #include <Servo.h>
 
 //Define Components & Pins
-Servo steeringServo;      //Servo Object
-int steeringServoPin = 2; //Pin of servo motor
-int laserEmitter = 3;     //Pin of Laser Emitter
-int laserRecier = 4;      //Pin of Laser Reciever
-int IndicatorLED1 = 8;    //Pin of LED1
-int IndicatorLED2 = 9;    //Pin of LED2
-int IndicatorLED3 = 10;   //Pin of LED3
-int IndicatorLED4 = 11;   //Pin of LED4
+Servo steeringServo;       //Servo Object
+#define steeringServoPin 2 //Pin of servo motor
+#define laserEmitter 3     //Pin of Laser Emitter
+#define laserRecier 4      //Pin of Laser Reciever
+#define IndicatorLED1 8    //Pin of LED1
+#define IndicatorLED2 9    //Pin of LED2
+#define IndicatorLED3 10   //Pin of LED3
+#define IndicatorLED4 11   //Pin of LED4
 
 //Hardware Values (Change Not reccomended)
 int hitReg = false;       // Toggle for hit detection
