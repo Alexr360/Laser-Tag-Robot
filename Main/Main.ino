@@ -2,13 +2,23 @@
 
 //Define Components & Pins
 Servo steeringServo;       //Servo Object
-#define steeringServoPin 2 //Pin of servo motor
-#define laserEmitter 3     //Pin of Laser Emitter
-#define laserRecier 4      //Pin of Laser Reciever
-#define IndicatorLED1 8    //Pin of LED1
-#define IndicatorLED2 9    //Pin of LED2
-#define IndicatorLED3 10   //Pin of LED3
-#define IndicatorLED4 11   //Pin of LED4
+
+#define steeringServoPin 53 //Pin of servo motor
+#define laserEmitter 2     //Pin of Laser Emitter
+#define laserRecier 3      //Pin of Laser Reciever
+
+#define IndicatorLED1 4    //Pin of LED1
+#define IndicatorLED2 5    //Pin of LED2
+#define IndicatorLED3 6    //Pin of LED3
+#define IndicatorLED4 7    //Pin of LED4
+
+#define SteeringControll 11     //Steering Input Pin
+#define ThrottleControll 12     //Throttle Input Pin
+#define ControllerButton 13     //Button Input Pin
+
+#define MotorPWMSpeed 8
+#define MotorIn1 9
+#define MotorIn2 10
 
 //Hardware Values (Change Not reccomended)
 int hitReg = false;       // Toggle for hit detection
@@ -34,27 +44,55 @@ void setup() {
   pinMode(IndicatorLED4, OUTPUT);
 
   //Init Functions
-  steeringServo.write(startSteeringPos);    //Set steering to forwards
+//  steeringServo.write(startSteeringPos);    //Set steering to forwards
   led(IndicatorLED1, true);                 //Enables LED Indicator 1
   led(IndicatorLED2, true);                 //Enables LED Indicator 2
   led(IndicatorLED3, true);                 //Enables LED Indicator 3
   led(IndicatorLED4, false);                //Disables LED Indicator 4
-  digitalWrite(laserEmitter, HIGH);         //Enable Laser Emitter
+
+  //Controller
+  pinMode(SteeringControll, INPUT);
+  pinMode(ThrottleControll, INPUT);
+  pinMode(ControllerButton, INPUT);
+
+  //Debug
+  Serial.begin(9600);
 }
 
 void loop() {
-  //Hit Detection
-  if (digitalRead(laserRecier) == true && hitReg == false) {
-    //Reciver is being hit
-    lives = lives - 1;                         //Remove 1 Life
-    livesIndicator(lives);                     //Change LED's to Reflect Life Count
-    hitReg = true;                             //Turn on the Being Hit Variable
-    led(IndicatorLED4, true);                  //Disables LED Indicator 4
-  }
-  else if (digitalRead(laserRecier) == false && hitReg == true) {
-    //Reciver has stopped being hit
-    hitReg = false;                            //Turn off the being hit variable
-    led(IndicatorLED4, false);                 //Disables LED Indicator 4
+  alive = (lives > 0);
+
+  if (alive) {
+    //Laser Control
+    int button = pulseIn(ControllerButton, HIGH);
+    int buttonAdj = map(button, 900, 1900, LOW, HIGH);
+    digitalWrite(laserEmitter, buttonAdj);
+
+    //Throttle Control
+    int throttle = pulseIn(ThrottleControll, HIGH);
+    int throttleAdj = map(map(throttle, 1000, 2000, 0, 25), 0, 25, 0, 255);
+    MotorControl(throttleAdj);
+
+    //Steering Control
+    int steering = pulseIn(SteeringControll, HIGH);
+    int steeringAdj = map(steering, 1330, 1660, 0, 180);
+    steeringServo.write(steeringAdj);
+
+    Serial.println(throttleAdj);
+    
+    //Hit Detection
+    if (digitalRead(laserRecier) == true && hitReg == false) {
+      //Reciver is being hit
+      lives = lives - 1;                         //Remove 1 Life
+      livesIndicator(lives);                     //Change LED's to Reflect Life Count
+      hitReg = true;                             //Turn on the Being Hit Variable
+      led(IndicatorLED4, true);                  //Disables LED Indicator 4
+    }
+    else if (digitalRead(laserRecier) == false && hitReg == true) {
+      //Reciver has stopped being hit
+      hitReg = false;                            //Turn off the being hit variable
+      led(IndicatorLED4, false);                 //Disables LED Indicator 4
+    } 
   }
 }
 
@@ -65,7 +103,6 @@ void livesIndicator(int lives) {
     led(IndicatorLED2, true);             //Enables LED Indicator 2
     led(IndicatorLED3, true);             //Enables LED Indicator 3
     led(IndicatorLED4, false);            //Disables LED Indicator 4
-    digitalWrite(laserEmitter, HIGH);     //Enables Laser Emitter
     return;
   }
   else if (lives == 2) {
@@ -74,7 +111,6 @@ void livesIndicator(int lives) {
     led(IndicatorLED2, true);             //Enables LED Indicator 2
     led(IndicatorLED3, false);            //Disables LED Indicator 3
     led(IndicatorLED4, false);            //Disables LED Indicator 4
-    digitalWrite(laserEmitter, HIGH);     //Enables Laser Emitter
     return;
   }
   else if (lives == 1) {
@@ -83,7 +119,6 @@ void livesIndicator(int lives) {
     led(IndicatorLED2, false);            //Disables LED Indicator 2
     led(IndicatorLED3, false);            //Disables LED Indicator 3
     led(IndicatorLED4, false);            //Disables LED Indicator 4
-    digitalWrite(laserEmitter, HIGH);     //Enables Laser Emitter
     return;
   }
   else if (lives < 1) {
@@ -106,5 +141,25 @@ void led(int pin, bool enabledDisabled) {
   else {
     digitalWrite(pin, LOW);
     return;
+  }
+}
+
+void MotorControl(int speed) {
+  if (speed > 127) {
+    //Forward
+    digitalWrite(MotorIn1, HIGH);
+    digitalWrite(MotorIn2, LOW);
+    analogWrite(MotorPWMSpeed, 255);
+  }
+  else if (speed == 127) {
+    //Stopped
+    digitalWrite(MotorIn1, LOW);
+    digitalWrite(MotorIn2, LOW);
+  }
+  else {
+    //Backward
+    digitalWrite(MotorIn1, LOW);
+    digitalWrite(MotorIn2, HIGH);
+    analogWrite(MotorPWMSpeed, 255);
   }
 }
