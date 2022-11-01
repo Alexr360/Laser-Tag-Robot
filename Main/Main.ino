@@ -23,9 +23,11 @@ Servo steeringServo;       //Servo Object
 //Hardware Values (Change Not reccomended)
 int hitReg = false;       // Toggle for hit detection
 bool alive = false;       // Robot is alive
+int oldSteer = 90;         //Per
 
 //Customization Values (You can change)
 int startSteeringPos = 90; //Servo can be set from 0-180 so 90 is the middle
+int steeringSensitivity = 6; //6 Reccomended
 int lives = 3;             // Number of Lives at the start
 int ledBrightness = 25;   // Brightness of LEDS
 
@@ -77,10 +79,23 @@ void loop() {
 
     //Steering Control
     int steering = pulseIn(SteeringControll, HIGH);
-    int steeringAdj = map(steering, 1330, 1660, 0, 180);
-    steeringServo.write(steeringAdj);
-
-//    Serial.println(throttleAdjB);
+    int steeringAdj = map(steering, 1340, 1650, 0, 180);
+    if (steeringAdj > 180) {
+      steeringAdj = 180;
+    }
+    else if (steeringAdj < 0) {
+      steeringAdj = 0;
+    }
+    int steeringDiff = oldSteer-steeringAdj;
+    if (steeringDiff > steeringSensitivity || steeringDiff < -steeringSensitivity) {
+      //Move      
+      oldSteer = steeringAdj;
+      steeringServo.write(steeringAdj);
+    }
+    else {
+      //Don't Move
+    }
+    Serial.println(steeringDiff);
     
     //Hit Detection
     if (digitalRead(laserRecier) == true && hitReg == false) {
