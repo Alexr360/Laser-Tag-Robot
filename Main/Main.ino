@@ -70,15 +70,17 @@ void loop() {
 
     //Throttle Control
     int throttle = pulseIn(ThrottleControll, HIGH);
-    int throttleAdj = map(map(throttle, 1000, 2000, 0, 25), 0, 25, 0, 255);
-    MotorControl(throttleAdj);
+    int throttleAdj = map(map(throttle, 1125, 2000, 0, 25), 0, 25, 0, 255);
+    int throttleFWD = map(throttleAdj, 125, 255, 0, 255);
+    int throttleBKW = map(throttleAdj, 0, 110, 255, 0);
+    MotorControl(throttleAdj, throttleFWD, throttleBKW);
 
     //Steering Control
     int steering = pulseIn(SteeringControll, HIGH);
     int steeringAdj = map(steering, 1330, 1660, 0, 180);
     steeringServo.write(steeringAdj);
 
-    Serial.println(throttleAdj);
+//    Serial.println(throttleAdjB);
     
     //Hit Detection
     if (digitalRead(laserRecier) == true && hitReg == false) {
@@ -144,22 +146,22 @@ void led(int pin, bool enabledDisabled) {
   }
 }
 
-void MotorControl(int speed) {
-  if (speed > 127) {
+void MotorControl(int speed, int throttleAdjF, int throttleAdjB) {
+  if (speed > 125) {
     //Forward
     digitalWrite(MotorIn1, HIGH);
     digitalWrite(MotorIn2, LOW);
-    analogWrite(MotorPWMSpeed, 255);
+    analogWrite(MotorPWMSpeed, throttleAdjF);
   }
-  else if (speed == 127) {
-    //Stopped
-    digitalWrite(MotorIn1, LOW);
-    digitalWrite(MotorIn2, LOW);
-  }
-  else {
+  else if (speed < 110) {
     //Backward
     digitalWrite(MotorIn1, LOW);
     digitalWrite(MotorIn2, HIGH);
-    analogWrite(MotorPWMSpeed, 255);
+    analogWrite(MotorPWMSpeed, throttleAdjB);
+  }
+  else {
+    //Stopped
+    digitalWrite(MotorIn1, LOW);
+    digitalWrite(MotorIn2, LOW);
   }
 }
