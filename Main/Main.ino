@@ -4,37 +4,39 @@
 Servo steeringServo;       //Servo Object
 
 #define steeringServoPin 53 //Pin of servo motor
-#define laserEmitter 2     //Pin of Laser Emitter
-#define laserRecier 3      //Pin of Laser Reciever
+#define laserEmitter 2      //Pin of Laser Emitter
+#define laserRecier 3       //Pin of Laser Reciever
 
 #define IndicatorLED1 4    //Pin of LED1
 #define IndicatorLED2 5    //Pin of LED2
 #define IndicatorLED3 6    //Pin of LED3
 #define IndicatorLED4 7    //Pin of LED4
 
-#define SteeringControll 11     //Steering Input Pin
-#define ThrottleControll 12     //Throttle Input Pin
+#define SteeringControl 11      //Steering Input Pin
+#define ThrottleControl 12      //Throttle Input Pin
 #define ControllerButton 13     //Button Input Pin
 
-#define MotorPWMSpeed 8
-#define MotorIn1 9
-#define MotorIn2 10
+#define MotorPWMSpeed 8     //Pin of Motor PWM Output
+#define MotorIn1 9          //Pin of Motor Output 1
+#define MotorIn2 10         //Pin of Motor Output 2
 
 //Hardware Values (Change Not reccomended)
 int hitReg = false;       // Toggle for hit detection
 bool alive = false;       // Robot is alive
-int oldSteer = 90;         //Per
+int oldSteer = 90;        // Steering value last loop
 
 //Customization Values (You can change)
-int startSteeringPos = 90; //Servo can be set from 0-180 so 90 is the middle
-int steeringSensitivity = 6; //6 Reccomended
-int lives = 3;             // Number of Lives at the start
-int ledBrightness = 25;   // Brightness of LEDS
+int startSteeringPos = 90;    // Servo can be set from 0-180 so 90 is the middle
+int steeringSensitivity = 6;  // 6 Reccomended
+int minTurnAngle = 0;         // 0 Recomended
+int maxTurnAngle = 180;       // 180 Recomended
+int lives = 3;                // Number of Lives at the start
+int ledBrightness = 25;       // Brightness of LEDS
 
 void setup() {
   //Laser Setup
-  pinMode(laserEmitter, OUTPUT);    //Emiter
-  pinMode(laserRecier, INPUT);      //Reciever
+  pinMode(laserEmitter, OUTPUT);    // Emiter
+  pinMode(laserRecier, INPUT);      // Reciever
 
   //Steering Servo Setup
   steeringServo.attach(steeringServoPin);
@@ -46,15 +48,15 @@ void setup() {
   pinMode(IndicatorLED4, OUTPUT);
 
   //Init Functions
-//  steeringServo.write(startSteeringPos);    //Set steering to forwards
+  steeringServo.write(startSteeringPos);    //Set steering to forwards
   led(IndicatorLED1, true);                 //Enables LED Indicator 1
   led(IndicatorLED2, true);                 //Enables LED Indicator 2
   led(IndicatorLED3, true);                 //Enables LED Indicator 3
   led(IndicatorLED4, false);                //Disables LED Indicator 4
 
   //Controller
-  pinMode(SteeringControll, INPUT);
-  pinMode(ThrottleControll, INPUT);
+  pinMode(SteeringControl, INPUT);
+  pinMode(ThrottleControl, INPUT);
   pinMode(ControllerButton, INPUT);
 
   //Debug
@@ -71,31 +73,22 @@ void loop() {
     digitalWrite(laserEmitter, buttonAdj);
 
     //Throttle Control
-    int throttle = pulseIn(ThrottleControll, HIGH);
+    int throttle = pulseIn(ThrottleControl, HIGH);
     int throttleAdj = map(map(throttle, 1125, 2000, 0, 25), 0, 25, 0, 255);
     int throttleFWD = map(throttleAdj, 125, 255, 0, 255);
     int throttleBKW = map(throttleAdj, 0, 110, 255, 0);
     MotorControl(throttleAdj, throttleFWD, throttleBKW);
 
     //Steering Control
-    int steering = pulseIn(SteeringControll, HIGH);
-    int steeringAdj = map(steering, 1340, 1650, 0, 180);
-    if (steeringAdj > 180) {
-      steeringAdj = 180;
-    }
-    else if (steeringAdj < 0) {
-      steeringAdj = 0;
-    }
+    int steering = pulseIn(SteeringControl, HIGH);
+    int steeringAdj = trim((map(steering, 1340, 1600, 0, 180) - 16),180,0);
     int steeringDiff = oldSteer-steeringAdj;
-    if (steeringDiff > steeringSensitivity || steeringDiff < -steeringSensitivity) {
-      //Move      
+    
+    if (steeringDiff > steeringSensitivity || steeringDiff < -steeringSensitivity || steeringAdj == minTurnAngle || steeringAdj == maxTurnAngle || steeringAdj == startSteeringPos) {
+      //Move if change in angle is > senstivity or at the limits
       oldSteer = steeringAdj;
       steeringServo.write(steeringAdj);
     }
-    else {
-      //Don't Move
-    }
-    Serial.println(steeringDiff);
     
     //Hit Detection
     if (digitalRead(laserRecier) == true && hitReg == false) {
@@ -167,16 +160,30 @@ void MotorControl(int speed, int throttleAdjF, int throttleAdjB) {
     digitalWrite(MotorIn1, HIGH);
     digitalWrite(MotorIn2, LOW);
     analogWrite(MotorPWMSpeed, throttleAdjF);
+    return;
   }
   else if (speed < 110) {
     //Backward
     digitalWrite(MotorIn1, LOW);
     digitalWrite(MotorIn2, HIGH);
     analogWrite(MotorPWMSpeed, throttleAdjB);
+    return;
   }
   else {
     //Stopped
     digitalWrite(MotorIn1, LOW);
     digitalWrite(MotorIn2, LOW);
+    return;
   }
+}
+
+int trim(int value, int maxValue, int minValue) {
+  //Trim variable to between 2 numbers
+  if (value > maxValue) {
+    return maxValue;
+  }
+  else if (value < minValue) {
+    return minValue;
+  }
+  return value;
 }
