@@ -34,7 +34,7 @@ int minTurnAngle = 0;             // Minimum angle of steering                  
 int maxTurnAngle = 180;           // Maximum angle of steering                                (Default: 180)
 int lives = 3;                    // Number of Lives at the start                             (Default: 3)
 int ledBrightness = 25;           // Chages brightness of LEDS                                (Default: 25)
-int debugMode = false             // Enables or Disables Debug Mode                           (Default: false)
+int debugMode = false;            // Enables or Disables Debug Mode                           (Default: false)
 
 
 
