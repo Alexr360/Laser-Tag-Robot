@@ -75,10 +75,8 @@ void setup() {
 
 //Main logic loop (Lives, Controlls, Laser, Steering, Motor, LEDs)
 void loop() {
-  alive = (lives > 0);    //Test if alive
-
   //Stops the robot from functioning if not alive
-  if (alive) {
+  if (lives > 0) {
     //Laser Control
     int button = pulseIn(ControllerButton, HIGH);                             //Gather usable data from button
     int laserButton = map(button, 900, 1900, LOW, HIGH);                      //Map data to LOW or HIGH
@@ -153,6 +151,7 @@ void livesIndicator(int lives) {
     led(IndicatorLED3, false);            //Disables LED Indicator 3
     led(IndicatorLED4, true);             //Enables LED Indicator 4
     digitalWrite(laserEmitter, LOW);      //Disables Laser Emitter
+    MotorControl(0, 0, 0);                //Disables the motor
     return;
   }
 }
